@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会议室管理系统</title>
+    <link rel="stylesheet" href="../css/common/reset.css">
+    <link rel="stylesheet" href="../css/meetings.css">
+    <link rel="stylesheet" href="../layui/css/layui.css">
+</head>
+<!-- 左侧菜单栏 -->
+<body>
+    <div id="wrap">
+        <div id="subBar" style="overflow:auto">
+            <img src="images/学院logo2.png" class="logo" alt="">
+            <div class="message">
+                <p>欢迎您的使用！</p>
+                <p id="num_today">今天预约数：0</p>
+            </div>
+            <!-- 网页跳转 -->
+            <ul class="action">
+                <a href="meetings.html"><li><i id="num_meeting"></i>已预约会议</li></a>
+                <a href="meetingrooms.html"><li>会议室管理</li></a>
+                <a href="adminMembers.html"><li>管理员管理</li></a>
+                <a href="userMembers.html"><li>用户管理</li></a>
+                <br><br><br><br><br>
+                <a href="../login.html"><li>退出登录</li></a>
+            </ul>
+        </div>
+        <!-- 右侧信息管理界面 -->
+        <div id="navBar">
+            <h3>会议室管理</h3>
+        </div>
+        <div id="content" style="overflow:auto">
+            <button id="addMeetingRoom" type="button" class="layui-btn layui-btn-normal">添加会议室</button>
+            <table id="demo" lay-filter="test"></table>
+        </div>   
+    </div>
+    <script language="JavaScript">
+        setTimeout(function(){location.reload()},600000); 
+        //指定10min刷新一次页面
+    </script>
+    <script src="../layui/layui.js" src1="//www.layuicdn.com/layui-v2.0.1/layui.js" charset="utf-8"></script>
+    <script type="text/html" id="statusBar">
+        <input type="checkbox" checked="" name="switch" lay-skin="switch" lay-filter="switchTest" lay-text="启用|禁用">
+    </script>
+    <!-- 按钮设置 -->
+    <script type="text/html" id="barDemo">
+        <a class="layui-btn layui-btn-xs " lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="del">删除</a>
+    </script>
+    <script>
+    // 调用layui库
+    layui.use(['table', 'dropdown', 'form'], function(){
+    var table = layui.table
+    var form = layui.form
+    ,layer = layui.layer
+    ,$ = layui.$
+    ,laytpl = layui.laytpl
+    ,dropdown = layui.dropdown;
+    
+    var today = new Date();
+    var date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+    $.getJSON('https://www.sysumeeting.com//ruangong/call_function.php?func=count_meetings&para="'+date+'"',function(res){
+        var temp=document.getElementById("num_today")
+        temp.innerHTML="今天预约数："+res.data[0].num
+    })
+
+    $.getJSON('https://www.sysumeeting.com//ruangong/call_function.php?func=count_allmeetings',function(res){
+        var temp=document.getElementById("num_meeting")
+        temp.innerHTML=res.data[0].num
+    }) 
+
+    //全局设定某参数
+    table.set({
+        where: {
+        token: '全局的 token'
+        ,access: '全局的 access'
+        }
+        ,limit: 30
+    });
+    
+    //表格数据
+    table.render({
+        elem: '#demo',
+        id:'tableId',
+        url:"https://www.sysumeeting.com//ruangong/call_function.php?func=show_meetingrooms_no_img",
+        request:{
+            pageName:"pageNo",
+            limitName:"pageSize"
+        }
+        ,cols: [[ //标题栏   
+        {field: 'room_add', title: '地点', width: 120}
+        ,{field: 'capacity', title: '可容纳人数', width: 130} 
+        ,{field: 'introduction', title: '设备', width: 150}
+        ,{field: 'labels', title: '会议室特色', width: 150}
+        ,{
+            field:'status'
+            ,title:'状态'
+            , width: 150
+            //数据回显
+            ,templet:function(d){
+                if(d.status==1)
+                {
+                    return '<input id="statusBar" type="checkbox" checked="" name="switch" lay-skin="switch" lay-filter="switchTest" lay-text="启用|禁用" >'
+                }
+                else if(d.status==0)
+                {
+                    return '<input id="statusBar" type="checkbox" name="switch" lay-skin="switch" lay-filter="switchTest" lay-text="启用|禁用" >'
+                }
+            }
+        }
+        ,{title:'操作',toolbar:'#barDemo'}
+        ]]
+        //获取数据
+        ,parseData: function(d){
+            return {
+                "code":d.code,
+                "msg":d.msg,
+                "count":d.data.length,
+                "data":d.data
+            }
+        }
+        ,skin: 'row' //表格风格
+        ,even: true
+        ,page: false //是否显示分页
+        ,limits: [30,50,100]
+        ,limit: 30 //每页默认显示的数量
+        ,loading: true //请求数据时，是否显示loading
+        
+    });
+
+    //触发表格行点击
+    table.on('tr', function(obj){
+        console.log(obj)
+    });
+    
+    //触发表格单选框选择
+    table.on('rowDouble(test)', function(obj){
+        console.log(obj);
+    });
+    
+    //触发单元格编辑
+    table.on('edit(test)', function(obj){
+        var value = obj.value //得到修改后的值
+        ,data = obj.data //得到所在行所有键值
+        ,field = obj.field; //得到字段
+        console.log(obj)
+    });
+    
+    //触发行工具事件
+    table.on('tool(test)', function(obj){
+        if(obj.event === 'del'){
+            layer.confirm('您要删除这个会议室吗？', function(index){
+                var url='https://www.sysumeeting.com//ruangong/call_function.php?func=delete_meetingroom&para="'+obj.data.room_add+'"';
+                $.getJSON(url,function(res){
+                    // console.log(res)
+                    if(res.valid==0){
+                        layer.confirm("删除失败")
+                    }
+                    else if(res.valid==1){
+                        layer.msg("成功删除会议室")
+                        obj.del();
+                    }
+                }) 
+                
+                layer.close(index);
+            });
+        } else if(obj.event === 'edit'){
+            layer.open({
+                type:2,
+                title:"修改会议室",
+                content: "../utils/editMeetingRoom.html",
+                area: ['700px','600px'],
+                success: function(layero, index){
+                    //数据回显
+                    var body = layer.getChildFrame('body',index);
+                    body.find("#room_add").val(obj.data.room_add);
+                    body.find("#capacity").val(obj.data.capacity);
+                    body.find("#introduction").val(obj.data.introduction);
+                    body.find("#labels").val(obj.data.labels);
+                },
+                end:function(){
+                    table.reload("tableId");
+                },
+                closeBtn: 1
+            })
+        }
+    });
+    // 切换会议室状态
+    form.on('switch(switchTest)', function(obj){
+        var room_addr = obj.othis.parents('tr').find("td :first").text();
+            if(this.checked){
+                var url='https://www.sysumeeting.com//ruangong/call_function.php?func=update_meetingroom_status&para="'+room_addr+'","1"';
+                $.getJSON(url,function(res){
+                }) 
+                layer.msg("会议室已启用", {offset: '30vw'});
+            }else{
+                var url='https://www.sysumeeting.com//ruangong/call_function.php?func=update_meetingroom_status&para="'+room_addr+'","0"';
+                $.getJSON(url,function(res){
+                }) 
+                layer.msg('会议室已禁用', {offset: '30vw'});
+            }
+    });
+    var $ = layui.jquery, active = {
+        parseTable: function(){
+        table.init('parse-table-demo', {
+            limit: 3
+        });
+        }
+        ,add: function(){
+        table.addRow('test')
+        }
+    };
+    // 实现添加会议室功能
+    $("#addMeetingRoom").click(function(){
+       layer.open({
+            type:2,
+            title:"添加会议室",
+            content: "../utils/addMeetingRoom.html",
+            area: ['700px','600px'],
+            end:function(){
+                //数据表格刷新
+                table.reload("tableId");
+            },
+            closeBtn: 1
+       })
+    });
+    $('i').on('click', function(){
+        var type = $(this).data('type');
+        active[type] ? active[type].call(this) : '';
+    });
+    $('.layui-btn').on('click', function(){
+        var type = $(this).data('type');
+        active[type] ? active[type].call(this) : '';
+    });
+    });
+    </script>
+</body>
+</html>

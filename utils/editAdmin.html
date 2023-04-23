@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修改密码</title>
+    <link rel="stylesheet" href="../layui/css/layui.css">
+</head>
+<br><br>
+<!-- 表单结构 -->
+<body>
+    <form class="layui-form" action="">
+      <div class="layui-form-item">
+        <label class="layui-form-label">账号</label>
+        <div class="layui-input-inline">
+          <input type="text" id="id" name="id"  disabled  class="layui-input">
+        </div>
+      </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">新的密码</label>
+          <div class="layui-input-inline">
+            <input type="text" id="password" name="password"  required  lay-verify="required"  autocomplete="off"  class="layui-input">
+          </div>
+        </div>
+        <br><br>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="editRoom">提交修改</button>
+          </div>
+        </div>
+      </form>
+    <script src="../layui/layui.js" src1="https://cdn.staticfile.org/layui/2.6.8/layui.js" charset="utf-8"></script>
+    <script>
+    layui.use(['form','upload', 'element'], function(){
+        var form = layui.form
+        var $ = layui.jquery
+        ,upload = layui.upload
+        ,element = layui.element;
+        
+        //提交
+        form.on('submit(editRoom)', function(data){
+          // layer.msg(JSON.stringify(data.field));
+          console.log("==>>", data.field);
+          //AJAX请求
+          var url='https://www.sysumeeting.com//ruangong/call_function.php?func=update_administrator&para="'+data.field.id+'","'+data.field.password+'"';
+
+          $.getJSON(url,function(d){
+            console.log("-->>", d);
+            if(d.valid==0){
+              var temp = parent.parent.layer;
+              temp.msg("修改密码失败");
+            }else if(d.valid==1){
+                 //关闭弹出框
+                var temp = parent.parent.layer;
+                temp.msg("修改密码成功");
+                var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                parent.layer.close(index); //再执行关闭 
+                
+            }
+          })
+          return false;
+        });
+    });
+    </script>
+</body>
+</html>

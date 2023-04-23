@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加会议室</title>
+    <link rel="stylesheet" href="../layui/css/layui.css">
+
+</head>
+<br><br><br>
+<!-- 表单结构 -->
+<body>
+    <form class="layui-form" action="">
+        <div class="layui-form-item">
+          <label class="layui-form-label">账号</label>
+          <div class="layui-input-inline">
+            <input type="text" name="id" required  lay-verify="required" placeholder="请输入新的管理员账号" autocomplete="off" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">密码</label>
+          <div class="layui-input-inline">
+            <input type="text" name="password" required lay-verify="required" placeholder="请输入密码" autocomplete="off" class="layui-input">
+          </div>
+        </div>
+        <br><br>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="addRoom">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+          </div>
+        </div>
+      </form>
+      <script src="../layui/layui.js" src1="https://cdn.staticfile.org/layui/2.6.8/layui.js" charset="utf-8"></script>
+      <script>
+      layui.use(['form','upload', 'element'], function(){
+          var form = layui.form
+          ,$ = layui.$
+          ,upload = layui.upload
+          ,element = layui.element
+          ,laytpl = layui.laytpl;
+
+          //提交数据，修改数据库
+          form.on('submit(addRoom)', function(data){
+            var url='https://www.sysumeeting.com//ruangong/call_function.php';
+            $.getJSON(url,{func:"insert_administrator",para:'"'+data.field.id+'","'+data.field.password+'",""'},function(res){
+              if(res.valid==0){
+                var index = parent.parent.layer
+                index.msg("添加失败")
+              }
+              else if(res.valid==1){
+                var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                parent.layer.close(index); //再执行关闭
+              }
+            })
+            return false;
+          });
+        });
+        </script>
+</body>
+</html>

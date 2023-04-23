@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑会议室</title>
+    <link rel="stylesheet" href="../layui/css/layui.css">
+    <style>
+      body{padding: 50px 100px;}
+      .layui-upload-img{width: 256px; height: 144px; margin: 0 10px 10px 0;}
+      hr{margin: 30px 0;}
+      </style>
+</head>
+<!-- 表单结构 -->
+<body>
+    <form class="layui-form" action="">
+        <div class="layui-form-item">
+          <label class="layui-form-label">地点</label>
+          <div class="layui-input-block">
+            <input type="text" id="room_add" name="room_add" disabled  class="layui-input">
+          </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">可容纳人数</label>
+            <div class="layui-input-block">
+              <input type="text" id="capacity" name="capacity" required  lay-verify="required" placeholder="请输入会议室可容纳人数" autocomplete="off" class="layui-input">
+            </div>
+          </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">设备</label>
+            <div class="layui-input-block">
+              <input type="text" id="introduction" name="introduction" required  lay-verify="required" placeholder="请输入会议室拥有设备" autocomplete="off" class="layui-input">
+            </div>
+          </div>
+        </div>
+        <div class="layui-form-item">
+          <label class="layui-form-label">会议室特色</label>
+          <div class="layui-input-block">
+            <input type="text" id="labels" name="labels" required  lay-verify="required" placeholder="请输入会议室特色" autocomplete="off" class="layui-input">
+          </div>
+        </div>
+        </div>
+        <div class="layui-upload layui-form-item">
+          <label class="layui-form-label">会议室图片</label>
+          <img class="layui-upload-img" src="" id="demo1">
+          <p id="demoText"></p>
+          <div class="layui-input-block">
+            <button type="button" class="layui-btn" id="test1" name="123" >上传图片</button>
+            <div class="layui-progress layui-progress-big " lay-showPercent="yes"  lay-filter="demo">
+              <div class="layui-progress-bar" lay-percent=""></div>
+            </div>
+          </div>
+        </div>
+        <br><br>
+        <div class="layui-form-item">
+          <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="editRoom">提交修改</button>
+          </div>
+        </div>
+      </form>
+    <script src="../layui/layui.js" src1="https://cdn.staticfile.org/layui/2.6.8/layui.js" charset="utf-8"></script>
+
+    <script>
+    layui.use(['form','upload', 'element'], function(){
+        var form = layui.form
+        var $ = layui.jquery
+        ,upload = layui.upload
+        ,element = layui.element;
+        
+        
+
+        var photo="";
+        var uploadInst = upload.render({
+          elem: '#test1'
+          ,url: 'https://httpbin.org/post'
+          //,size: 2000 //限制文件大小，单位 KB
+          //,accept: 'file'
+          ,method: 'post'
+          ,fileAccept: 'image/*'
+          ,exts: "jpg|png|gif|bmp|jpeg|pdf"
+          ,data: { //额外参数
+            a: 1
+            ,b: function(){
+            return 2
+          }
+        }
+        ,choose: function(obj){
+          // console.log('choose', obj);
+          obj.preview(function (index,file,result) {
+
+            // console.log(":",formData)
+              $('#test1').attr('src',result);
+              //将图片信息存入全局变量photo中以便提交表单的时候直接获取图片信息
+              photo = result;
+          })
+        }
+        ,before: function(obj){
+          //预读本地文件示例，不支持ie8
+          obj.preview(function(index, file, result){
+            $('#demo1').attr('src', result); //图片链接（base64）
+          });
+      
+          return;
+          layer.msg('不允许上传')
+          return false;
+        }
+        ,done: function(res, index){
+        
+          //如果上传失败
+          if(res.code > 0){
+            return layer.msg('上传失败');
+          }
+          //上传成功
+          console.log(res, index);
+        }
+        ,progress: function(n, elem, res, index){
+          // console.log(n + '%', elem, res, index); //获取进度百分比
+          element.progress('demo', n + '%'); //可配合 layui 进度条元素使用
+        }
+      });
+
+      //提交
+      form.on('submit(editRoom)', function(data){
+          // layer.msg(JSON.stringify(data.field));
+          // console.log("==>>", data.field);
+          var loca=photo.indexOf(',');
+          var len=photo.length;
+          photo=photo.substring(loca+1,len);
+          len=photo.length;
+          // console.log(len)
+
+          if(len==0){
+            var url='https://www.sysumeeting.com//ruangong/call_function.php?func=update_meetingroom_no_image&para="'+data.field.room_add+'","'+data.field.capacity+'","'+data.field.introduction+'","'+data.field.labels+'"';
+            $.getJSON(url,function(res){
+              // console.log("res",res)
+              if(res.valid==0){
+                var index = parent.parent.layer
+                index.msg("修改失败")
+              }
+              else if(res.valid==1){
+                var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                parent.layer.close(index); //再执行关闭
+              }
+            })
+          }
+          else{
+            var url='https://www.sysumeeting.com//ruangong/post_function.php';
+            $.post(url,{func:'update_meetingroom_no_status',room_addr:data.field.room_add,capacity:data.field.capacity,introduction:data.field.introduction,labels:data.field.labels,image:photo},function(res){
+              // console.log("res",res)
+              if(res.valid==0){
+                var index = parent.parent.layer
+                index.msg("修改失败")
+              }
+              else if(res.valid==1){
+                var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                parent.layer.close(index); //再执行关闭
+              }
+            },"json")
+          }  
+          return false;
+        });
+  
+    });
+    </script>
+</body>
+</html>
